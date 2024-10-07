@@ -256,6 +256,11 @@ Voire dns.pcapng
 
 # IV. Network scanning et adresses IP
 ### 🌞 Effectue un scan du réseau auquel tu es connecté
+```
+PS C:\Users\willi> nmap -sn -Pr 192.168.1.1/24
+Illegal Argument to -P, use -Pn, -PE, -PS, -PA, -PP, -PM, -PU, -PY, or -PO
+QUITTING!
+```
 
 ### 🌞 Changer d'adresse IP
 ```
