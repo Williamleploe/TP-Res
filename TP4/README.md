@@ -9,3 +9,9 @@ J'utilise la commande ping google.com
 ```
 
 ### ☀️ Directement dans Wireshark, vous pouvez voir toutes les infos que vous donne  le serveur DHCP
+commande utilisé: 
+```
+PS C:\Users\willi> ipconfig /release
+PS C:\Users\willi> ipconfig /renew
+```` 
+[dhcp.pcapng](Dora.pcapng)
