@@ -45,7 +45,3 @@ rtt min/avg/max/mdev = 1.578/2.355/4.225/1.092 ms
 # II. Accès internet pour tous 
 ## 1. Accès internet routeur
 ### ☀️ Déjà, prouvez que le routeur a un accès internet
-
-
-
-
