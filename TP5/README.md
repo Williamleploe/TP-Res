@@ -83,13 +83,13 @@ rtt min/avg/max/mdev = 1.112/1.605/2.351/0.460 ms
 ## 1. Accès internet routeur
 ### ☀️ Déjà, prouvez que le routeur a un accès internet
 ```
-[william@william ~]# ping ynov.com
-PING ynov.com (104.26.11.233) 56(84) bytes of data.
-64 bytes from 104.26.11.233 (104.26.11.233): icmp_seq=1 ttl=46 time=37.5 ms
-64 bytes from 104.26.11.233 (104.26.11.233): icmp_seq=2 ttl=46 time=36.0 ms
-64 bytes from 104.26.11.233 (104.26.11.233): icmp_seq=3 ttl=46 time=33.3 ms
+[william@william ~]# ping google.com
+PING google.com (172.217.19.142) 56(84) bytes of data.
+64 bytes from 172.217.19.142 (172.217.19.142): icmp_seq=1 ttl=46 time=37.5 ms
+64 bytes from 172.217.19.142 (172.217.19.142): icmp_seq=2 ttl=46 time=36.0 ms
+64 bytes from 172.217.19.142 (172.217.19.142): icmp_seq=3 ttl=46 time=33.3 ms
 ^C
---- ynov.com ping statistics ---
+--- google.com ping statistics ---
 3 packets transmitted, 3 received, 0% packet loss, time 2028ms
 rtt min/avg/max/mdev = 33.367/35.587/37.451/1.639 ms
 ```
@@ -99,10 +99,10 @@ rtt min/avg/max/mdev = 33.367/35.587/37.451/1.639 ms
 william@william-VirtualBox:~$ ping www.ynov.com
 PING www.ynov.com (104.26.10.233) 56(84) bytes of data.
 64 bytes from 104.26.10.233: icmp_seq=1 ttl=51 time=16.6 ms
-64 bytes from 104.26.10.233: icmp_seq=2 ttl=51 time=15.8 ms
-64 bytes from 104.26.10.233: icmp_seq=3 ttl=51 time=17.1 ms
-64 bytes from 104.26.10.233: icmp_seq=4 ttl=51 time=14.6 ms
-64 bytes from 104.26.10.233: icmp_seq=5 ttl=51 time=16.2 ms
+64 bytes from 104.26.10.233: icmp_seq=2 ttl=51 time=14.8 ms
+64 bytes from 104.26.10.233: icmp_seq=3 ttl=51 time=16.1 ms
+64 bytes from 104.26.10.233: icmp_seq=4 ttl=51 time=13.6 ms
+64 bytes from 104.26.10.233: icmp_seq=5 ttl=51 time=15.2 ms
 ^C
 --- www.ynov.com ping statistics ---
 5 packets transmitted, 5 received, 0% packet loss, time 4092ms
@@ -177,3 +177,70 @@ subnet 10.5.1.0 netmask 255.255.255.0 {
 [william@william dhcp]# firewall-cmd --runtime-to-permanent
 ```
 ### B. Test avec un nouveau client
+
+### ☀️ Créez une nouvelle machine client client3.tp5.b1
+```
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s8:
+      dhcp4: yes
+```
+Nommage et comfimation des informations du client 3
+```
+william@client3:~$ sudo hostnamectl
+Static hostname: client3.tp5.b1
+
+matheo@client3:~$ ip a
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:f1:14:00 brd ff:ff:ff:ff:ff:ff
+    inet 10.5.1.137/24 brd 10.5.1.255 scope global dynamic noprefixroute enp0s8
+
+matheo@client3:~$ ping ynov.com
+PING ynov.com (104.26.11.233) 56(84) bytes of data.
+64 bytes from 104.26.11.233: icmp_seq=1 ttl=51 time=16.6 ms
+64 bytes from 104.26.11.233: icmp_seq=2 ttl=51 time=14.4 ms
+64 bytes from 104.26.11.233: icmp_seq=3 ttl=51 time=16.5 ms
+^C
+--- ynov.com ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2004ms
+rtt min/avg/max/mdev = 14.431/15.849/16.594/1.003 ms
+```
+## C. Consulter le bail DHCP 
+### ☀️ Consultez le bail DHCP qui a été créé pour notre client
+```
+[william@william dhcpd]# cat /var/lib/dhcpd/dhcpd.leases
+# The format of this file is documented in the dhcpd.leases(5) manual page.
+# This lease file was written by isc-dhcp-4.4.2b1
+
+# authoring-byte-order entry is generated, DO NOT DELETE
+authoring-byte-order little-endian;
+
+server-duid "\000\001\000\001.\241\002\361\010\000'\302`\011";
+
+lease 10.5.1.137 {
+  starts 2 2024/10/15 20:16:06;
+  ends 3 2024/10/16 08:16:06;
+  cltt 2 2024/10/15 20:16:06;
+  binding state active;
+  next binding state free;
+  rewind binding state free;
+  hardware ethernet 08:00:27:f1:14:00;
+  uid "\001\010\000'\361\024\000";
+  client-hostname "william-VirtualBox";
+
+}
+```
+### ☀️ Confirmez qu'il s'agit bien de la bonne adresse MAC
+```
+[william@routeur dhcpd]# cat /var/lib/dhcpd/dhcpd.leases
+lease 10.5.1.137 {
+  hardware ethernet 08:00:27:f1:14:00;
+}
+
+matheo@client3:~$ ip a
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:f1:14:00 brd ff:ff:ff:ff:ff:ff
+    inet 10.5.1.137/24 brd 10.5.1.255 scope global dynamic noprefixroute enp0s8
+```
