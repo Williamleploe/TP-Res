@@ -137,3 +137,97 @@ public (active)
         width: 100%;
       }
 ```
+# 2. Serveur DNS
+## 4. Analyse du service
+### ☀️ Déterminer sur quel(s) port(s) écoute le service BIND9.
+```
+[root@dns william]# sudo ss -lmpt | grep 53
+LISTEN 0      10         10.6.2.12:domain      0.0.0.0:*    users:(("named",pid=11538,fd=25))
+LISTEN 0      10         10.0.3.15:domain      0.0.0.0:*    users:(("named",pid=11538,fd=27))
+LISTEN 0      4096       127.0.0.1:rndc        0.0.0.0:*    users:(("named",pid=11538,fd=30))
+LISTEN 0      10         127.0.0.1:domain      0.0.0.0:*    users:(("named",pid=11538,fd=22))
+LISTEN 0      4096           [::1]:rndc           [::]:*    users:(("named",pid=11538,fd=31))
+LISTEN 0      10             [::1]:domain         [::]:*    users:(("named",pid=11538,fd=29))
+```
+
+
+### ☀️ Ouvrir ce(s) port(s) dans le firewall.
+```
+[root@dns william]# sudo firewall-cmd --list-all
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: enp0s3 enp0s8
+  sources:
+  services: cockpit dhcpv6-client ssh
+  ports: 53/tcp 53/udp
+  protocols:
+  forward: yes
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+```
+
+# 5. Tests manuels
+### ☀️ Effectuez des requêtes DNS manuellement depuis le serveur DNS lui-même dans un premier temps
+
+```
+[root@dns william]# dig web.tp6.b1 @10.6.2.12
+;; ANSWER SECTION:
+web.tp6.b1.             86400   IN    A10.6.2.11
+
+[root@dns william]# dig dns.tp6.b1 @10.6.2.12
+;; ANSWER SECTION:
+dns.tp6.b1.             86400   IN      A       10.6.2.12
+
+[root@dns william]# dig ynov.com @10.6.2.12
+;; ANSWER SECTION:
+ynov.com.               300     IN      A       104.26.10.233
+ynov.com.               300     IN      A       172.67.74.226
+ynov.com.               300     IN      A       104.26.11.233
+
+[root@dns william]# dig -x 10.6.2.11 @10.6.2.12
+;; ANSWER SECTION:
+11.2.6.10.in-addr.arpa. 86400   IN      PTR     web.tp6.b1.
+
+[root@dns william]# dig -x 10.6.2.12 @10.6.2.12 
+;; ANSWER SECTION: 12.2.6.10.in-addr.arpa. 86400 IN PTR dns.tp6.b1.
+```
+### ☀️ Effectuez une requête DNS manuellement depuis client1.tp6.b1
+```
+william@willclient1:~$ nslookup web.tp.b1 ^C william@willclient1:~$ nslookup web.tp6.b1 Server: 127.0.0.53 Address: 127.0.0.53#53
+
+Non-authoritative answer: Name: web.tp6.b1 Address: 10.6.2.11
+
+```
+### ☀️ Capturez une requête DNS et la réponse de votre serveur
+```
+Voir fichier dns.pcap 
+```
+
+# 3. Serveur DHCP
+- récupérez une IP en DHCP sur ce nouveau client2.tp6.b1
+```
+william@client2:~$ ip a
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:93:ad:7e brd ff:ff:ff:ff:ff:ff
+    inet 10.6.1.39/24 brd 10.6.1.255 scope global dynamic noprefixroute enp0s8
+       valid_lft 42496sec preferred_lft 42496sec
+    inet6 fe80::a00:27ff:fe93:ad7e/64 scope link
+       valid_lft forever preferred_lft forever
+```
+ - vérifiez que vous avez bien 10.6.2.12 comme serveur DNS à contacter
+```
+william@client2:~$ resolvectl
+Global
+         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+  resolv.conf mode: stub
+
+Link 2 (enp0s8)
+    Current Scopes: DNS
+         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+Current DNS Server: 10.6.2.12
+       DNS Servers: 10.6.2.12
+```
